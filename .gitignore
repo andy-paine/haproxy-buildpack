@@ -1,3 +1,4 @@
 pkg
 .bin
+haproxy-buildpack
 scaffold_buildpack-*.zip
