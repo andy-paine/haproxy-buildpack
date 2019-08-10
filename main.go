@@ -65,7 +65,7 @@ func main() {
 		Manifest: manifest,
 		Installer: installer,
 		Stager:   stager,
-		Command:  &libbuildpack.Command{},
+		CompileCommand:  &supply.CompileCommand{},
 		Log:      logger,
 	}
 

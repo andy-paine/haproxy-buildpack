@@ -1,14 +1,15 @@
 package supply_test
 
 import (
-  "bytes"
-	"io/ioutil"
-	"os"
-  "github.com/andy-paine/haproxy-buildpack/cmd/supply"
-  "github.com/cloudfoundry/libbuildpack"
+	"bytes"
+	"fmt"
+	"github.com/andy-paine/haproxy-buildpack/cmd/supply"
+	"github.com/cloudfoundry/libbuildpack"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"os"
 )
 
 //go:generate mockgen -source=supply.go --destination=mocks_test.go --package=supply_test
@@ -26,7 +27,7 @@ var _ = Describe("Supply", func() {
 		buffer        *bytes.Buffer
 	)
 
-  BeforeEach(func() {
+	BeforeEach(func() {
 		var err error
 		buffer = new(bytes.Buffer)
 		logger = libbuildpack.NewLogger(buffer)
@@ -40,22 +41,40 @@ var _ = Describe("Supply", func() {
 		Expect(err).ToNot(HaveOccurred())
 		depDir, err = ioutil.TempDir("", "haproxy.depdir")
 		mockStager.EXPECT().DepDir().AnyTimes().Return(depDir)
+		mockManifest.EXPECT().AllDependencyVersions("haproxy").AnyTimes().Return([]string{"0.0.0", "0.0.1"})
+		mockManifest.EXPECT().GetEntry(gomock.Any()).AnyTimes().Return(&libbuildpack.ManifestEntry{
+      Dependency: libbuildpack.Dependency{ Version: "0.0.1" },
+      URI: "https://downloaded.from/v0.0.1",
+    }, nil)
 
-    supplier = &supply.Supplier{
-      Manifest: mockManifest,
-      Installer: mockInstaller,
-      Stager:   mockStager,
-      Command:  mockCommand,
-      Log:      logger,
-    }
+		supplier = &supply.Supplier{
+			Manifest:  mockManifest,
+			Installer: mockInstaller,
+			Stager:    mockStager,
+			CompileCommand:   mockCommand,
+			Log:       logger,
+		}
 	})
 
-  AfterEach(func() {
+	AfterEach(func() {
 		mockCtrl.Finish()
 		os.RemoveAll(depDir)
 	})
 
-	It("should download HAProxy tarball", func() {
-		Expect(supplier.Run()).To(Succeed())
+  It("should use the latest version available", func() {
+    version, err := supplier.VersionToInstall()
+		Expect(err).To(BeNil())
+    Expect(version.Dependency.Version).To(Equal("0.0.1"))
+  })
+
+	It("should install HAProxy tarball", func() {
+    dep := libbuildpack.Dependency{Name: "haproxy", Version: "0.0.1"}
+		mockInstaller.EXPECT().InstallDependency(gomock.Eq(dep), fmt.Sprintf("%s/haproxy", depDir))
+		Expect(supplier.InstallArchive(dep)).To(Succeed())
 	})
+
+  It("should compile HAProxy with correct flags", func() {
+		mockCommand.EXPECT().Run(fmt.Sprintf("%s/haproxy", depDir))
+    Expect(supplier.Compile()).To(Succeed())
+  })
 })

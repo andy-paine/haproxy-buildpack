@@ -4,5 +4,5 @@ set -exuo pipefail
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 source .envrc
 
-GOOS=linux go build -ldflags="-s -w" -o bin/supply haproxy/supply/cli
-GOOS=linux go build -ldflags="-s -w" -o bin/finalize haproxy/finalize/cli
+GOOS=linux go build -ldflags="-s -w" -o bin/supply
+GOOS=linux go build -ldflags="-s -w" -o bin/finalize

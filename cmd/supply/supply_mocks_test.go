@@ -7,7 +7,6 @@ package supply_test
 import (
 	libbuildpack "github.com/cloudfoundry/libbuildpack"
 	gomock "github.com/golang/mock/gomock"
-	io "io"
 	reflect "reflect"
 )
 
@@ -127,6 +126,21 @@ func (mr *MockManifestMockRecorder) AllDependencyVersions(arg0 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllDependencyVersions", reflect.TypeOf((*MockManifest)(nil).AllDependencyVersions), arg0)
 }
 
+// GetEntry mocks base method
+func (m *MockManifest) GetEntry(arg0 libbuildpack.Dependency) (*libbuildpack.ManifestEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEntry", arg0)
+	ret0, _ := ret[0].(*libbuildpack.ManifestEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEntry indicates an expected call of GetEntry
+func (mr *MockManifestMockRecorder) GetEntry(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntry", reflect.TypeOf((*MockManifest)(nil).GetEntry), arg0)
+}
+
 // DefaultVersion mocks base method
 func (m *MockManifest) DefaultVersion(arg0 string) (libbuildpack.Dependency, error) {
 	m.ctrl.T.Helper()
@@ -191,66 +205,4 @@ func (m *MockInstaller) InstallOnlyVersion(arg0, arg1 string) error {
 func (mr *MockInstallerMockRecorder) InstallOnlyVersion(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstallOnlyVersion", reflect.TypeOf((*MockInstaller)(nil).InstallOnlyVersion), arg0, arg1)
-}
-
-// MockCommand is a mock of Command interface
-type MockCommand struct {
-	ctrl     *gomock.Controller
-	recorder *MockCommandMockRecorder
-}
-
-// MockCommandMockRecorder is the mock recorder for MockCommand
-type MockCommandMockRecorder struct {
-	mock *MockCommand
-}
-
-// NewMockCommand creates a new mock instance
-func NewMockCommand(ctrl *gomock.Controller) *MockCommand {
-	mock := &MockCommand{ctrl: ctrl}
-	mock.recorder = &MockCommandMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
-	return m.recorder
-}
-
-// Execute mocks base method
-func (m *MockCommand) Execute(arg0 string, arg1, arg2 io.Writer, arg3 string, arg4 ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2, arg3}
-	for _, a := range arg4 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Execute", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Execute indicates an expected call of Execute
-func (mr *MockCommandMockRecorder) Execute(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockCommand)(nil).Execute), varargs...)
-}
-
-// Output mocks base method
-func (m *MockCommand) Output(dir, program string, args ...string) (string, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{dir, program}
-	for _, a := range args {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Output", varargs...)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Output indicates an expected call of Output
-func (mr *MockCommandMockRecorder) Output(dir, program interface{}, args ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{dir, program}, args...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Output", reflect.TypeOf((*MockCommand)(nil).Output), varargs...)
 }

@@ -1,49 +1,81 @@
 package supply
 
 import (
-	"io"
+  "errors"
+	"path/filepath"
 
 	"github.com/cloudfoundry/libbuildpack"
 )
 
 type Stager interface {
-	//TODO: See more options at https://github.com/cloudfoundry/libbuildpack/blob/master/stager.go
 	BuildDir() string
 	DepDir() string
 	DepsIdx() string
 	DepsDir() string
+  AddBinDependencyLink(string, string) error
 }
 
 type Manifest interface {
-	//TODO: See more options at https://github.com/cloudfoundry/libbuildpack/blob/master/manifest.go
 	AllDependencyVersions(string) []string
+	GetEntry(libbuildpack.Dependency) (*libbuildpack.ManifestEntry, error)
 	DefaultVersion(string) (libbuildpack.Dependency, error)
 }
 
 type Installer interface {
-	//TODO: See more options at https://github.com/cloudfoundry/libbuildpack/blob/master/installer.go
 	InstallDependency(libbuildpack.Dependency, string) error
 	InstallOnlyVersion(string, string) error
 }
 
 type Command interface {
-	//TODO: See more options at https://github.com/cloudfoundry/libbuildpack/blob/master/command.go
-	Execute(string, io.Writer, io.Writer, string, ...string) error
-	Output(dir string, program string, args ...string) (string, error)
+  Run(string) error
 }
 
 type Supplier struct {
 	Manifest  Manifest
 	Installer Installer
 	Stager    Stager
-	Command   Command
+	CompileCommand Command
 	Log       *libbuildpack.Logger
 }
 
 func (s *Supplier) Run() error {
-	s.Log.BeginStep("Supplying haproxy")
+	s.Log.BeginStep("Downloading HAProxy")
 
-	// TODO: Install any dependencies here...
+  entry, err := s.VersionToInstall()
+  s.Log.Info("Using version %s from %s", entry.Dependency.Version, entry.URI)
+	if err != nil {
+		return err
+	}
+
+  dir, err := s.InstallArchive(entry.Dependency)
+	if err != nil {
+		return err
+	}
+
+	if err := s.CompileAndLink(dir); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (s *Supplier) VersionToInstall() (*libbuildpack.ManifestEntry, error) {
+	versions := s.Manifest.AllDependencyVersions("haproxy")
+	if len(versions) < 1 {
+		return nil, errors.New("Unable to find a version of haproxy to install")
+	}
+	dep := libbuildpack.Dependency{Name: "haproxy", Version: versions[len(versions)-1]}
+	return s.Manifest.GetEntry(dep)
+}
+
+func (s *Supplier) InstallArchive(dep libbuildpack.Dependency) (string, error) {
+	dir := filepath.Join(s.Stager.DepDir(), "haproxy")
+	return dir, s.Installer.InstallDependency(dep, dir)
+}
+
+func (s *Supplier) CompileAndLink(dir string) error {
+	if err := s.CompileCommand.Run(dir); err != nil {
+    return err
+  }
+  return s.Stager.AddBinDependencyLink(filepath.Join(dir, "haproxy"), "haproxy")
 }
