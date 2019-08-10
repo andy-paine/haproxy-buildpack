@@ -1,6 +1,7 @@
 package supply
 
 import (
+  "fmt"
   "errors"
 	"path/filepath"
 
@@ -52,7 +53,8 @@ func (s *Supplier) Run() error {
 		return err
 	}
 
-	if err := s.CompileAndLink(dir); err != nil {
+	haproxyDir := filepath.Join(dir, fmt.Sprintf("haproxy-%s", entry.Dependency.Version))
+	if err := s.CompileAndLink(haproxyDir); err != nil {
 		return err
 	}
 
