@@ -1,8 +1,8 @@
 package supply
 
 import (
-  "fmt"
-  "errors"
+	"errors"
+	"fmt"
 	"path/filepath"
 
 	"github.com/cloudfoundry/libbuildpack"
@@ -13,7 +13,7 @@ type Stager interface {
 	DepDir() string
 	DepsIdx() string
 	DepsDir() string
-  AddBinDependencyLink(string, string) error
+	AddBinDependencyLink(string, string) error
 }
 
 type Manifest interface {
@@ -28,27 +28,27 @@ type Installer interface {
 }
 
 type Command interface {
-  Run(string) error
+	Run(string) error
 }
 
 type Supplier struct {
-	Manifest  Manifest
-	Installer Installer
-	Stager    Stager
+	Manifest       Manifest
+	Installer      Installer
+	Stager         Stager
 	CompileCommand Command
-	Log       *libbuildpack.Logger
+	Log            *libbuildpack.Logger
 }
 
 func (s *Supplier) Run() error {
 	s.Log.BeginStep("Downloading HAProxy")
 
-  entry, err := s.VersionToInstall()
-  s.Log.Info("Using version %s from %s", entry.Dependency.Version, entry.URI)
+	entry, err := s.VersionToInstall()
+	s.Log.Info("Using version %s from %s", entry.Dependency.Version, entry.URI)
 	if err != nil {
 		return err
 	}
 
-  dir, err := s.InstallArchive(entry.Dependency)
+	dir, err := s.InstallArchive(entry.Dependency)
 	if err != nil {
 		return err
 	}
@@ -71,13 +71,15 @@ func (s *Supplier) VersionToInstall() (*libbuildpack.ManifestEntry, error) {
 }
 
 func (s *Supplier) InstallArchive(dep libbuildpack.Dependency) (string, error) {
-	dir := filepath.Join(s.Stager.DepDir(), "haproxy")
+	dir := filepath.Join(s.Stager.DepDir(), "haproxy-archive")
 	return dir, s.Installer.InstallDependency(dep, dir)
 }
 
 func (s *Supplier) CompileAndLink(dir string) error {
 	if err := s.CompileCommand.Run(dir); err != nil {
-    return err
-  }
-  return s.Stager.AddBinDependencyLink(filepath.Join(dir, "haproxy"), "haproxy")
+		return err
+	}
+	libbuildpack.CopyFile(filepath.Join(dir, "haproxy"), "haproxy")
+
+	return s.Stager.AddBinDependencyLink("haproxy", "haproxy")
 }
